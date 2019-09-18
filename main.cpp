@@ -2,9 +2,9 @@
 #include "async_io.hpp"
 
 int main() {
-    std::cout << " Here" << std::endl;
-    async_io::async_io io_buffer{ };
-    std::cout << "here2" << std::endl;
-    io_buffer.write("Hello world!");
-    std::cout << "here3" << std::endl;
+    async_io::async_io io_buffer{};
+    io_buffer.write("Test\n");
+    io_buffer.write(
+        std::make_unique<std::ofstream>("test_stream.txt", std::ios::app),
+        "Hello World\n");
 }

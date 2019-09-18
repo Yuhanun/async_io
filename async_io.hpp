@@ -30,16 +30,12 @@ namespace async_io {
             : _o_stream_ptr{ _u_ptr }, write_str{ std::move(str) } {
         }
 
-        // ASYNC_IO_FUNC _writeable(std::unique_ptr<std::ostream> _u_ptr, std::string const& str)
-        //     : _o_stream{ std::move(_u_ptr) }, _o_stream_ptr{ _o_stream.get() }, write_str{ str } {
-        // }
-
-        // ASYNC_IO_FUNC _writeable(std::ostream* _u_ptr, std::string const& str)
-        //     : _o_stream_ptr{ _u_ptr }, write_str{ str } {
-        // }
-
         ASYNC_IO_FUNC std::ostream& get() {
             return *_o_stream_ptr;
+        }
+
+        void write() {
+            get() << write_str << std::flush;
         }
 
         _writeable& operator=(_writeable const&) = delete;
@@ -48,25 +44,13 @@ namespace async_io {
         _writeable(_writeable const&) = delete;
         _writeable(_writeable&& other) noexcept {
             _o_stream = std::move(other._o_stream);
-            _o_stream_ptr = _o_stream.get();
+            _o_stream_ptr = other._o_stream_ptr;
             other._o_stream_ptr = nullptr;
             write_str = std::move(other.write_str);
         }
+
+        ~_writeable() = default;
     };
-
-
-    // template <typename T, typename = std::enable_if<std::is_base_of<std::ostream, T>::value>>
-    // struct writable {
-    //     using ptr_type = std::conditional_t<std::is_nothrow_move_constructible_v<T>, std::unique_ptr<T>, T*>;
-    //     constexpr static bool is_unique_ptr = !std::is_same_v<T*, ptr_type>;
-
-    //     writable(ptr_type ss, std::string& str)
-    //         : _ptr{ std::move_if_noexcept(ss) }, out_str{ std::move(str) } {
-    //     }
-
-    //     ptr_type _ptr;
-    //     std::string out_str;
-    // };
 
     class async_io {
     public:
@@ -87,6 +71,7 @@ namespace async_io {
         }
 
         ASYNC_IO_FUNC async_io() {
+            _o_stream_ptr = &std::cout;
             start_thread();
         }
 
@@ -129,13 +114,13 @@ namespace async_io {
                 if (!_write_queue.empty()) {
                     auto element = std::move(_write_queue.front());
                     _write_queue.pop();
-                    element.get() << element.write_str << std::flush;
+                    element.write();
                 }
             }
             while (!_write_queue.empty()) {
                 auto element = std::move(_write_queue.front());
                 _write_queue.pop();
-                element.get() << element.write_str << std::flush;
+                element.write();
             }
         }
     };
